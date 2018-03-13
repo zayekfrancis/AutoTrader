@@ -37,6 +37,15 @@ public class MACD {
 		}
 		
 		calculateSignalEMA(stock, signalMACDEMA, signal);
+		String firstDate = stock.getDates().get(signal - 1);
+		for (String date : stock.getDates()) {
+			int firstDateIndex = stock.getDates().indexOf(firstDate);
+			int dateIndex = stock.getDates().indexOf(date);
+			if (dateIndex >= firstDateIndex) {
+				double signalLineValue = signalMACDEMA.get(date);
+				stock.setMACDSignal(date, signalLineValue);
+			}
+		}
 		
 		for (String date : stock.getDates()) {
 			double macDHistogram = stock.getMACDLine(date) - stock.getMACDSignal(date);
@@ -89,5 +98,7 @@ public class MACD {
 		double sma = sumPrices / signalMACD;
 		return sma;
 	}
+	
+	
 
 }

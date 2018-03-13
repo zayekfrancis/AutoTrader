@@ -26,10 +26,45 @@ public class ADXAnalyzer {
 			if (positiveDICross(stock, date, timePeriod)) {
 				double diDiff = stock.getpDI(date) - stock.getnDI(date);
 				if (stock.getADX(date) > 20 && diDiff > 10 && stock.getpDI(date) > 20) {
-					int startingDIIndex = stock.getDates().indexOf(date) - 3;
+					int startingDIIndex = stock.getDates().indexOf(date) - timePeriod / 4;
 					String startingDIDiffDate = stock.getDates().get(startingDIIndex);
 					double startingDIDiff = stock.getpDI(startingDIDiffDate) - stock.getnDI(startingDIDiffDate);
 					double endingDIDiff = stock.getpDI(date) - stock.getnDI(date);
+
+					if (endingDIDiff > startingDIDiff * .95) {
+						return true;
+					}
+				}
+
+			}
+		}
+		return false;
+	}
+
+	public static boolean nonTrendingBuySignal(Stock stock, int timePeriod, String date) {
+		int endingIndex = stock.getDates().indexOf(date);
+		int startingIndex = (int) (endingIndex - (timePeriod / 2));
+
+		if (nonTrendingAdxSignal(stock, startingIndex, endingIndex)) {
+			if (stock.getADX(date) < 20) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static boolean sellSignal(Stock stock, int timePeriod, String date) {
+		int endingIndex = stock.getDates().indexOf(date);
+		int startingIndex = (int) (endingIndex - (timePeriod / 2));
+
+		if (adxSignal(stock, startingIndex, endingIndex)) {
+			if (positiveDICross(stock, date, timePeriod)) {
+				double diDiff = stock.getnDI(date) - stock.getpDI(date);
+				if (stock.getADX(date) > 20 && diDiff > 10 && stock.getnDI(date) > 20) {
+					int startingDIIndex = stock.getDates().indexOf(date) - timePeriod / 4;
+					String startingDIDiffDate = stock.getDates().get(startingDIIndex);
+					double startingDIDiff = stock.getnDI(startingDIDiffDate) - stock.getpDI(startingDIDiffDate);
+					double endingDIDiff = stock.getnDI(date) - stock.getpDI(date);
 
 					if (endingDIDiff > startingDIDiff * .95) {
 						return true;
@@ -59,7 +94,41 @@ public class ADXAnalyzer {
 		return false;
 	}
 
+	private static boolean nonTrendingAdxSignal(Stock stock, int startingIndex, int endingIndex) {
+		int adxCount = 0;
+		int consecutiveADXReqForSignal = (endingIndex - startingIndex) / 7;
+		for (int i = startingIndex; i <= endingIndex; i++) {
+			String iDate = stock.getDates().get(i);
+			double currentADX = stock.getADX(iDate);
+			if (currentADX < 20) {
+				adxCount++;
+			} else {
+				adxCount = 0;
+			}
+			if (adxCount > consecutiveADXReqForSignal) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public static boolean positiveDICross(Stock stock, String date, int timePeriod) {
+		int currentDateIndex = stock.getDates().indexOf(date);
+		int startingDateIndex = currentDateIndex - (timePeriod / 2);
+		int reqPointsBelownDI = (int) ((currentDateIndex - startingDateIndex) * .5);
+
+		int countBelownDI = 0;
+		for (int i = startingDateIndex; i <= currentDateIndex; i++) {
+			String iDate = stock.getDates().get(i);
+			if (stock.getpDI(iDate) < stock.getnDI(iDate) * 1.15) {
+				countBelownDI++;
+			}
+		}
+
+		return countBelownDI >= reqPointsBelownDI;
+	}
+
+	public static boolean negativeDICross(Stock stock, String date, int timePeriod) {
 		int currentDateIndex = stock.getDates().indexOf(date);
 		int startingDateIndex = currentDateIndex - (timePeriod / 2);
 		int reqPointsBelownDI = (int) ((currentDateIndex - startingDateIndex) * .6);
@@ -67,7 +136,7 @@ public class ADXAnalyzer {
 		int countBelownDI = 0;
 		for (int i = startingDateIndex; i <= currentDateIndex; i++) {
 			String iDate = stock.getDates().get(i);
-			if (stock.getpDI(iDate) < stock.getnDI(iDate) * 1.15) {
+			if (stock.getpDI(iDate) > stock.getnDI(iDate) * 1.15) {
 				countBelownDI++;
 			}
 		}

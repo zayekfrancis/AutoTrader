@@ -77,6 +77,7 @@ public class IEX {
 	public static final String CLOSE = "close";
 	public static final String HIGH = "high";
 	public static final String LOW = "low";
+	public static final String VOL = "volume";
 
 	// Client
 	private static OkHttpClient client = new OkHttpClient();
@@ -202,8 +203,8 @@ public class IEX {
 		double low = Double.parseDouble(jso.get(LOW).toString());
 		setStockMapValue(date, LOW, low);
 
-		double volume = Double.parseDouble(jso.get("volume").toString());
-		setStockMapValue(date, "volume", volume);
+		double volume = Double.parseDouble(jso.get(VOL).toString());
+		setStockMapValue(date, VOL, volume);
 	}
 
 	private void parseForIntraDayPrices(JsonObject jso) {
@@ -227,8 +228,8 @@ public class IEX {
 		double low = Double.parseDouble(jso.get(LOW).toString());
 		setStockMapValue(date, LOW, low);
 
-		double volume = Double.parseDouble(jso.get("volume").toString());
-		setStockMapValue(date, "volume", volume);
+		double volume = Double.parseDouble(jso.get(VOL).toString());
+		setStockMapValue(date, VOL, volume);
 	}
 
 	private void setStockMapValue(String key, String function, Double value) {
@@ -385,35 +386,35 @@ public class IEX {
 	}
 
 	public static ArrayList<String> getSP500() {
-		String[] spArray = { "AMD", "ABT", "ABBV", "ACN", "ADBE", "AAP", "AES", "AET", "AFL", "AMG", "A", "APD", "AKAM",
+		String[] spArray = { "AMD", "ABT", "ABBV", "ACN", "ADBE", "AAP", "AES", "AET", "AFL", "AMG", "APD", "AKAM",
 				"AA", "AGN", "ALXN", "ALLE", "ADS", "ALL", "MO", "AMZN", "AEE", "AAL", "AEP", "AXP", "AIG", "AMT",
 				"AMP", "ABC", "AME", "AMGN", "APH", "APC", "ADI", "AON", "APA", "AIV", "AMAT", "ADM", "AIZ", "T",
 				"ADSK", "ADP", "AN", "AZO", "AVGO", "AVB", "AVY", "BAC", "BK", "BCR", "BAX", "BBT", "BDX", "BBBY",
 				"BBY", "BLX", "HRB", "BA", "BWA", "BXP", "BMY", "CHRW", "CA", "COG", "CPB", "COF", "CAH", "HSIC", "KMX",
 				"CCL", "CAT", "CBG", "CBS", "CELG", "CNP", "CTL", "CERN", "CF", "SCHW", "CHK", "CVX", "CMG", "CB", "CI",
 				"XEC", "CINF", "CTAS", "CSCO", "C", "CTXS", "CLX", "CME", "CMS", "KO", "CCE", "CTSH", "CL", "CMCSA",
-				"CMA", "CAG", "COP", "ED", "STZ", "GLW", "COST", "CCI", "CSX", "CMI", "CVS", "DHI", "DHR", "DRI", "DVA",
-				"DE", "DLPH", "DAL", "XRAY", "DVN", "DO", "DTV", "DFS", "DISCA", "DISCK", "DG", "DLTR", "D", "DOV",
+				"CMA", "CAG", "COP", "ED", "STZ", "GLW", "COST", "CCI", "CSX", "CMI", "CVS", "DHI", "DRI", "DVA",
+				"DE", "DLPH", "DAL", "XRAY", "DVN", "DO", "DFS", "DISCA", "DISCK", "DG", "DLTR", "D", "DOV",
 				"DPS", "DTE", "DUK", "DNB", "ETFC", "EMN", "ETN", "EBAY", "ECL", "EIX", "EW", "EA", "EMR", "ENDP",
-				"ESV", "ETR", "EOG", "EQT", "EFX", "EQIX", "EQR", "ESS", "EL", "ES", "EXC", "EXPE", "EXPD", "ESRX",
+				"ESV", "ETR", "EOG", "EQT", "EFX", "EQIX", "EQR", "ESS", "EL", "EXC", "EXPE", "EXPD", "ESRX",
 				"XOM", "FFIV", "FB", "FAST", "FDX", "FIS", "FITB", "FSLR", "FE", "FLIR", "FLS", "FLR", "FMC", "FTI",
 				"F", "FOSL", "BEN", "FCX", "FTR", "GME", "GPS", "GRMN", "GD", "GE", "GGP", "GIS", "GM", "GPC", "GNW",
 				"GILD", "GS", "GT", "GOOGL", "GOOG", "GWW", "HAL", "HBI", "HOG", "HRS", "HIG", "HAS", "HCA", "HCP",
 				"HCN", "HP", "HES", "HPQ", "HD", "HON", "HRL", "HST", "HUM", "HBAN", "ITW", "IR", "INTC", "ICE", "IBM",
 				"IP", "IPG", "IFF", "INTU", "ISRG", "IVZ", "IRM", "JEC", "JBHT", "JNJ", "JCI", "JPM", "JNPR", "KSU",
 				"K", "KEY", "KMB", "KIM", "LNC", "LMT", "L", "LOW", "LYB", "MTB", "MAC", "M", "MNK", "MRO", "MPC",
-				"MAR", "MMC", "MLM", "MAS", "MA", "MAT", "MKC", "MCD", "MCK", "MMV", "MDT", "MRK", "MET", "KORS",
+				"MAR", "MMC", "MLM", "MAS", "MA", "MAT", "MKC", "MCD", "MCK", "MDT", "MRK", "MET", "KORS",
 				"MCHP", "MU", "MSFT", "MHK", "TAP", "MDLZ", "MON", "MNST", "MCO", "MS", "MOS", "MSI", "MUR", "MYL",
 				"NDAQ", "NOV", "NAVI", "NTAP", "NFLX", "NWL", "NFX", "NEM", "NWSA", "NEE", "NLSN", "NKE", "NI", "NE",
 				"NBL", "JWN", "NSC", "NTRS", "NOC", "NRG", "NUE", "NVDA", "ORLY", "OXY", "OMC", "OKE", "ORCL", "OI",
 				"PCAR", "PH", "PDCO", "PAYX", "PNR", "PBCT", "PEP", "PKI", "PRGO", "PFE", "PCG", "PM", "PSX", "PNW",
 				"PXD", "PBI", "PNC", "RL", "PPG", "PPL", "PX", "PCLN", "PFG", "PG", "PGR", "PLD", "PRU", "PEG", "PSA",
-				"PHM", "PVH", "QRVO", "PWR", "QCOM", "DGX", "RRC", "RTN", "O", "RHT", "REGN", "RF", "RSG", "RHI", "ROK",
+				"PHM", "PVH", "QRVO", "PWR", "QCOM", "DGX", "RRC", "RTN", "RHT", "RF", "RSG", "RHI", "ROK",
 				"COL", "ROP", "ROST", "R", "CRM", "SCG", "SLB", "SNI", "STX", "SEE", "SRE", "SHW", "SPG", "SWKS", "SLG",
 				"SJM", "SNA", "SO", "LUV", "SWN", "SWK", "SBUX", "STT", "SRCL", "SYK", "STI", "SYMC", "SYY", "TROW",
-				"TGT", "TEL", "TGNA", "THC", "TDC", "TXN", "TXT", "HSY", "TRV", "TMO", "TIF", "TWX", "TMK", "TSS",
-				"TSCO", "RIG", "TRIP", "FOXA", "TSN", "UA", "UNP", "UNH", "UPS", "URI", "UTX", "UHS", "UNM", "URBN",
-				"VFC", "VLO", "VAR", "VTR", "VRSN", "VZ", "VRTX", "VIAB", "V", "VNO", "VMC", "WMT", "WBA", "DIS", "WM",
+				"TGT", "TEL", "THC", "TDC", "TXN", "TXT", "HSY", "TRV", "TMO", "TIF", "TWX", "TMK", "TSS",
+				"TSCO", "RIG", "TRIP", "FOXA", "TSN", "UNP", "UNH", "UPS", "URI", "UTX", "UHS", "UNM", "URBN",
+				"VFC", "VLO", "VAR", "VTR", "VRSN", "VZ", "VIAB", "V", "VNO", "VMC", "WMT", "WBA", "DIS", "WM",
 				"WAT", "ANTM", "WFC", "WDC", "WU", "WY", "WHR", "WMB", "WEC", "WYN", "WYNN", "XEL", "XRX", "XLNX", "XL",
 				"XYL", "YUM", "ZBH", "ZION", "ZTS" };
 

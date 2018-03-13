@@ -16,6 +16,7 @@ public class Stock implements Cloneable {
 	private Map<String, Double> close;
 	private Map<String, Double> high;
 	private Map<String, Double> low;
+	private Map<String, Double> volume;
 
 	public Map<String, Double> tpSMA;
 	public Map<String, Double> tpEMA;
@@ -24,11 +25,12 @@ public class Stock implements Cloneable {
 	private Map<String, Double> fiftySMA;
 	private Map<String, Double> fiftyEMA;
 	private Map<String, Double> oneHundredSMA;
-	private Map<String, Double> oneHundredEMA;
+	private Map<String, Double> fiveEMA;
 	private Map<String, Double> ADX;
 	private Map<String, Double> pDI;
 	private Map<String, Double> nDI;
 	private Map<String, Double> SAR;
+	private Map<String, Double> ntSAR;
 	private Map<String, Double> basicStochasticK;
 	private Map<String, Double> stochasticK;
 	private Map<String, Double> stochasticD;
@@ -36,20 +38,39 @@ public class Stock implements Cloneable {
 	private Map<String, Double> MACDSignal;
 	private Map<String, Double> MACDHistogram;
 	private Map<String, Double> RSI;
+	private Map<String, Double> CCI;
+	private Map<String, Double> MFI;
+	private Map<String, Double> middleBBand;
+	private Map<String, Double> upperBBand;
+	private Map<String, Double>	lowerBBand;
+	private Map<String, Double>	percentB;
+	private Map<String, Double>	bollingerBandwidth;
+	
+	private Stock fractalStock;
+	
+	private Log log;
 
 	private boolean loadSuccessful;
 
 	private int timePeriod;
 	private String seriesType;
 	private double baseAF;
+	private double incrementAF;
 	private double maxAF;
+	private double ntBaseAF;
+	private double ntIncrementAF;
+	private double ntMaxAF;
 	private int stochasticSMAK;
 	private int stochasticSMAD;
 	private int fastMACD;
 	private int slowMACD;
 	private int signalMACD;
+	private int BBTimePeriod;
+	private int BBMultiplier;
 	public double diMaxDistance = 0;
 
+	private double stepLoss = 0;
+	private double stepGain = 0;
 	// Semaphore
 	public static Semaphore sem = new Semaphore(1);
 
@@ -76,21 +97,36 @@ public class Stock implements Cloneable {
 	}
 
 	// Daily or greater intervals
-	public Stock(String symbolIn, String intervalIn, int timePeriodIn, String seriesType, double baseAF, double maxAF,
-			int stochasticSMAK, int stochasticSMAD, int fastMACD, int slowMACD, int signalMACD, boolean local) {
+	public Stock(String symbolIn, String intervalIn, int timePeriodIn, 
+				 String seriesType, double baseAF, double incrementAF, 
+				 double maxAF, double ntBaseAF, double ntIncrementAF, 
+				 double ntMaxAF, int stochasticSMAK, int stochasticSMAD, 
+				 int fastMACD, int slowMACD, int signalMACD, int BBTimePeriod, 
+				 int BBMultiplier, boolean local) {
 		av = new IEX();
 		setSymbol(symbolIn);
 		setInterval(intervalIn);
 		setTimePeriod(timePeriodIn);
 		setSeriesType(seriesType);
+		
 		setBaseAF(baseAF);
+		setIncrementAF(incrementAF);
 		setMaxAF(maxAF);
+		
+		setNTBaseAF(ntBaseAF);
+		setNTIncrementAF(ntIncrementAF);
+		setNTMaxAF(ntMaxAF);
+		
 		setStochasticSMAK(stochasticSMAK);
 		setStochasticSMAD(stochasticSMAD);
+		
 		setFastMACD(fastMACD);
 		setSlowMACD(slowMACD);
 		setSignalMACD(signalMACD);
-
+		
+		setBBTimePeriod(BBTimePeriod);
+		setBBMultiplier(BBMultiplier);
+		
 		try {
 			sem.acquire();
 		} catch (InterruptedException e) {
@@ -104,25 +140,41 @@ public class Stock implements Cloneable {
 				loadSuccessful = true;
 			}
 		}
+		
+		setFractalStock(FractalEnergy.setUpFractalEnergy(this));
 		sem.release();
 	}
 
 	// IntraDay intervals
-	public Stock(String symbolIn, String intervalIn, String date, int timePeriodIn, String seriesType, double baseAF,
-			double maxAF, int stochasticSMAK, int stochasticSMAD, int fastMACD, int slowMACD, int signalMACD,
-			boolean local) {
+	public Stock(String symbolIn, String intervalIn, String date, int timePeriodIn, 
+				 String seriesType, double baseAF, double incrementAF,
+				 double maxAF, double ntBaseAF, double ntIncrementAF, 
+				 double ntMaxAF, int stochasticSMAK, int stochasticSMAD, 
+				 int fastMACD, int slowMACD, int signalMACD,
+				 int BBTimePeriod, int BBMultiplier, boolean local) {
 		av = new IEX();
 		setSymbol(symbolIn);
 		setInterval(intervalIn);
 		setTimePeriod(timePeriodIn);
 		setSeriesType(seriesType);
+		
 		setBaseAF(baseAF);
+		setIncrementAF(incrementAF);
 		setMaxAF(maxAF);
+		
+		setNTBaseAF(ntBaseAF);
+		setNTIncrementAF(ntIncrementAF);
+		setNTMaxAF(ntMaxAF);
+		
 		setStochasticSMAK(stochasticSMAK);
 		setStochasticSMAD(stochasticSMAD);
+		
 		setFastMACD(fastMACD);
 		setSlowMACD(slowMACD);
 		setSignalMACD(signalMACD);
+		
+		setBBTimePeriod(BBTimePeriod);
+		setBBMultiplier(BBMultiplier);
 
 		try {
 			sem.acquire();
@@ -137,6 +189,8 @@ public class Stock implements Cloneable {
 				loadSuccessful = true;
 			}
 		}
+		
+		setFractalStock(FractalEnergy.setUpFractalEnergy(this));
 		sem.release();
 	}
 
@@ -148,6 +202,7 @@ public class Stock implements Cloneable {
 			close = new HashMap<String, Double>();
 			high = new HashMap<String, Double>();
 			low = new HashMap<String, Double>();
+			volume = new HashMap<String, Double>();
 
 			dates.addAll(av.stockMap.keySet());
 			Collections.sort(dates);
@@ -156,6 +211,7 @@ public class Stock implements Cloneable {
 				setClose(key, av.stockMap.get(key).get(av.CLOSE));
 				setHigh(key, av.stockMap.get(key).get(av.HIGH));
 				setLow(key, av.stockMap.get(key).get(av.LOW));
+				setVolume(key, av.stockMap.get(key).get(av.VOL));
 			}
 			return true;
 		}
@@ -179,6 +235,7 @@ public class Stock implements Cloneable {
 				setClose(key, av.stockMap.get(key).get(av.CLOSE));
 				setHigh(key, av.stockMap.get(key).get(av.HIGH));
 				setLow(key, av.stockMap.get(key).get(av.LOW));
+				setVolume(key, av.stockMap.get(key).get(av.VOL));
 			}
 			return true;
 		}
@@ -194,7 +251,7 @@ public class Stock implements Cloneable {
 		fiftySMA = new HashMap<String, Double>();
 		fiftyEMA = new HashMap<String, Double>();
 		oneHundredSMA = new HashMap<String, Double>();
-		oneHundredEMA = new HashMap<String, Double>();
+		fiveEMA = new HashMap<String, Double>();
 
 		// ADX, +DI, -DI
 		ADX = new HashMap<String, Double>();
@@ -203,6 +260,9 @@ public class Stock implements Cloneable {
 
 		// Parabolic SAR
 		SAR = new HashMap<String, Double>();
+		
+		// Non-Trending Parabolic SAR
+		ntSAR = new HashMap<String, Double>();
 
 		// Stochastics
 		basicStochasticK = new HashMap<String, Double>();
@@ -216,7 +276,28 @@ public class Stock implements Cloneable {
 
 		// RSI
 		RSI = new HashMap<String, Double>();
+		
+		// CCI
+		CCI = new HashMap<String, Double>();
+		
+		// MFI
+		MFI = new HashMap<String, Double>();
+		
+		//Bollinger Bands
+		middleBBand = new HashMap<String, Double>();
+		upperBBand = new HashMap<String, Double>();
+		lowerBBand = new HashMap<String, Double>();
+		percentB = new HashMap<String, Double>();
+		bollingerBandwidth = new HashMap<String, Double>();
 
+		if (close.size() > 5) {
+			MovingAverageAnalyzer.calculateSMA(this, 5);
+			MovingAverageAnalyzer.calculateEMA(this, 5);
+			fiveEMA= tpEMA;
+			tpSMA = new HashMap<String, Double>();
+			tpEMA = new HashMap<String, Double>();
+		}
+		
 		if (close.size() > 20) {
 			MovingAverageAnalyzer.calculateSMA(this, 20);
 			MovingAverageAnalyzer.calculateEMA(this, 20);
@@ -235,21 +316,18 @@ public class Stock implements Cloneable {
 			tpEMA = new HashMap<String, Double>();
 		}
 		
-		if (close.size() > 100) {
-			MovingAverageAnalyzer.calculateSMA(this, 100);
-			MovingAverageAnalyzer.calculateEMA(this, 100);
-			oneHundredSMA = tpSMA;
-			oneHundredEMA = tpEMA;
-			tpSMA = new HashMap<String, Double>();
-			tpEMA = new HashMap<String, Double>();
-		}
-		
+
 		return (MovingAverageAnalyzer.calculateSMA(this, getTimePeriod())
 				&& MovingAverageAnalyzer.calculateEMA(this, getTimePeriod())
-				&& RSIAnalyzer.calculateRSI(this, getTimePeriod()) && ADXAnalyzer.calculateADX(this, getTimePeriod())
-				&& SARAnalyzer.calculateSAR(this, getTimePeriod(), getBaseAF(), getMaxAF())
+				&& RelativeStrengthIndex.calculateRSI(this, getTimePeriod()) && ADXAnalyzer.calculateADX(this, getTimePeriod())
+				&& SARAnalyzer.calculateSAR(this, getTimePeriod(), getBaseAF(), getIncrementAF(), getMaxAF())
+				&& SARAnalyzer.calculateNonTrendingSAR(this, getTimePeriod(), getNTBaseAF(), getNTIncrementAF(), getNTMaxAF())
 				&& Stochastics.calculateStochastics(this, getTimePeriod(), getStochasticSMAK(), getStochasticSMAD())
-				&& MACD.calculateMACD(this, getFastMACD(), getSlowMACD(), getSignalMACD()));
+				&& MACD.calculateMACD(this, getFastMACD(), getSlowMACD(), getSignalMACD())
+				&& BollingerBands.calculateBBands(this, getBBTimePeriod(), getBBMultiplier())
+				&& MoneyFlowIndex.calculateMFI(this)
+				&& CommodityChannelIndex.calculateCCI(this)
+				);
 	}
 
 	public boolean loadSuccessful() {
@@ -295,6 +373,14 @@ public class Stock implements Cloneable {
 	public double getBaseAF() {
 		return baseAF;
 	}
+	
+	public void setIncrementAF(double incrementAFIn) {
+		incrementAF = incrementAFIn;
+	}
+
+	public double getIncrementAF() {
+		return incrementAF;
+	}
 
 	public void setMaxAF(double maxAFIn) {
 		maxAF = maxAFIn;
@@ -304,6 +390,29 @@ public class Stock implements Cloneable {
 		return maxAF;
 	}
 
+	public void setNTBaseAF(double baseAFIn) {
+		ntBaseAF = baseAFIn;
+	}
+
+	public double getNTBaseAF() {
+		return ntBaseAF;
+	}
+	
+	public void setNTIncrementAF(double incrementAFIn) {
+		ntIncrementAF = incrementAFIn;
+	}
+
+	public double getNTIncrementAF() {
+		return ntIncrementAF;
+	}
+
+	public void setNTMaxAF(double maxAFIn) {
+		ntMaxAF = maxAFIn;
+	}
+
+	public double getNTMaxAF() {
+		return ntMaxAF;
+	}
 	public void setStochasticSMAK(int SMAKIn) {
 		stochasticSMAK = SMAKIn;
 	}
@@ -343,6 +452,22 @@ public class Stock implements Cloneable {
 	public int getSignalMACD() {
 		return signalMACD;
 	}
+	
+	public void setBBTimePeriod(int bbTimePeriod) {
+		BBTimePeriod = bbTimePeriod;
+	}
+	
+	public int getBBTimePeriod() {
+		return BBTimePeriod;
+	}
+
+	public void setBBMultiplier(int bbMultiplier) {
+		BBMultiplier = bbMultiplier;		
+	}
+
+	public int getBBMultiplier() {
+		return BBMultiplier;
+	}
 
 	public void setOpen(String dateIn, Double openIn) {
 		open.put(dateIn, openIn);
@@ -379,6 +504,10 @@ public class Stock implements Cloneable {
 	public Map<String, Double> getLowPrices() {
 		return low;
 	}
+	
+	public Map<String, Double> getAllVolume() {
+		return volume;
+	}
 
 	public void setHigh(String dateIn, Double highIn) {
 		high.put(dateIn, highIn);
@@ -391,7 +520,7 @@ public class Stock implements Cloneable {
 	public void setLow(String dateIn, Double lowIn) {
 		low.put(dateIn, lowIn);
 	}
-
+	
 	public double getLow(String dateIn) {
 		if (low.containsKey(dateIn)) {
 			return low.get(dateIn);
@@ -399,9 +528,25 @@ public class Stock implements Cloneable {
 			return getClose(dateIn);
 		}
 	}
-
+	
+	public void setVolume(String dateIn, Double volIn) {
+		volume.put(dateIn, volIn);
+	}
+	
+	public double getVolume(String dateIn) {
+		return volume.get(dateIn);
+	}
+	
 	public void setRSI(String dateIn, Double rsiIn) {
 		RSI.put(dateIn, rsiIn);
+	}
+	
+	public void setCCI(String dateIn, Double cciIn) {
+		CCI.put(dateIn, cciIn);
+	}
+	
+	public void setMFI(String dateIn, Double mfiIn) {
+		MFI.put(dateIn, mfiIn);
 	}
 
 	public void setSMA(String dateIn, Double smaIn) {
@@ -427,6 +572,10 @@ public class Stock implements Cloneable {
 	public void setSAR(String dateIn, Double sarIn) {
 		SAR.put(dateIn, sarIn);
 	}
+	
+	public void setNTSAR(String dateIn, Double sarIn) {
+		ntSAR.put(dateIn, sarIn);
+	}
 
 	public void setBasicStochasticK(String dateIn, Double kIn) {
 		basicStochasticK.put(dateIn, kIn);
@@ -450,6 +599,26 @@ public class Stock implements Cloneable {
 
 	public void setMACDHistogram(String dateIn, Double macdHistogramIn) {
 		MACDHistogram.put(dateIn, macdHistogramIn);
+	}
+	
+	public void setMiddleBBand(String dateIn, Double midBBandIn) {
+		middleBBand.put(dateIn, midBBandIn);
+	}
+	
+	public void setUpperBBand(String dateIn, Double upperBBandIn) {
+		upperBBand.put(dateIn, upperBBandIn);
+	}
+	
+	public void setLowerBBand(String dateIn, Double lowerBBandIn) {
+		lowerBBand.put(dateIn, lowerBBandIn);
+	}
+	
+	public void setPercentBBand(String dateIn, Double percentBBandIn) {
+		percentB.put(dateIn, percentBBandIn);
+	}
+	
+	public void setBollingerBandwidth(String dateIn, Double bollingerBandWidthIn) {
+		bollingerBandwidth.put(dateIn, bollingerBandWidthIn);
 	}
 
 	public double getSMA(String dateIn) {
@@ -480,8 +649,8 @@ public class Stock implements Cloneable {
 		return getMapValue(oneHundredSMA, dateIn);
 	}
 
-	public double getOneHundredEMA(String dateIn) {
-		return getMapValue(oneHundredEMA, dateIn);
+	public double getFiveEMA(String dateIn) {
+		return getMapValue(fiveEMA, dateIn);
 	}
 
 	public double getADX(String dateIn) {
@@ -498,6 +667,10 @@ public class Stock implements Cloneable {
 
 	public double getSAR(String dateIn) {
 		return getMapValue(SAR, dateIn);
+	}
+	
+	public double getNTSAR(String dateIn) {
+		return getMapValue(ntSAR, dateIn);
 	}
 
 	public double getBasicStochasticK(String dateIn) {
@@ -526,6 +699,42 @@ public class Stock implements Cloneable {
 
 	public double getRSI(String dateIn) {
 		return getMapValue(RSI, dateIn);
+	}
+	
+	public double getCCI(String dateIn) {
+		return getMapValue(CCI, dateIn);
+	}
+	
+	public double getMFI(String dateIn) {
+		return getMapValue(MFI, dateIn);
+	}
+	
+	public double getMiddleBBand(String dateIn) {
+		return getMapValue(middleBBand, dateIn);
+	}
+	
+	public double getUpperBBand(String dateIn) {
+		return getMapValue(upperBBand, dateIn);
+	}
+	
+	public double getLowerBBand(String dateIn) {
+		return getMapValue(lowerBBand, dateIn);
+	}
+	
+	public double getPercentBBand(String dateIn) {
+		return getMapValue(percentB, dateIn);
+	}
+	
+	public double getBollingerBandwidth(String dateIn) {
+		return getMapValue(bollingerBandwidth, dateIn);
+	}
+	
+	public Stock getFractalStock() {
+		return fractalStock;
+	}
+
+	public void setFractalStock(Stock fractalStock) {
+		this.fractalStock = fractalStock;
 	}
 
 	public double getLatestClosingPrice() {
@@ -566,6 +775,10 @@ public class Stock implements Cloneable {
 
 	public void setLows(HashMap<String, Double> lows) {
 		low = lows;
+	}
+	
+	public void setAllVolume(HashMap<String, Double> volume) {
+		this.volume = volume;
 	}
 
 	public ArrayList<String> getDates() {
@@ -619,5 +832,29 @@ public class Stock implements Cloneable {
 
 	protected Object clone() throws CloneNotSupportedException {
 		return super.clone();
+	}
+
+	public Log getLog() {
+		return log;
+	}
+
+	public void setLog(Log log) {
+		this.log = log;
+	}
+
+	public double getStepLoss() {
+		return stepLoss;
+	}
+
+	public void setStepLoss(double stepLoss) {
+		this.stepLoss = stepLoss;
+	}
+
+	public double getStepGain() {
+		return stepGain;
+	}
+
+	public void setStepGain(double stepGain) {
+		this.stepGain = stepGain;
 	}
 }
